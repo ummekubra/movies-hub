@@ -9,7 +9,7 @@ const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
   password: configService.get<string>('DB_PASSWORD'),
   database: configService.get<string>('DB_DATABASE'),
   autoLoadEntities: true,
-  synchronize: configService.get<string>('MODE') === 'DEV', // false for production
+  synchronize: configService.get<string>('MODE')?.toUpperCase() === 'DEV', // false for production
 });
 
 export default typeOrmConfig;
