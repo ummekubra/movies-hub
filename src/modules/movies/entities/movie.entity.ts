@@ -17,7 +17,7 @@ export class Movie {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   tmdbId: number;
 
   @Column()
@@ -35,13 +35,13 @@ export class Movie {
   @Column({ type: 'date', nullable: true })
   releaseDate: Date;
 
-  @Column({ type: 'decimal', precision: 4, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 4, default: 0 })
   popularity: number;
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
   voteAverage: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'bigint', default: 0 })
   voteCount: number;
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })

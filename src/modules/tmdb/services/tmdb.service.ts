@@ -1,99 +1,125 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import { Cron } from '@nestjs/schedule';
 import {
-  TMDBGenre,
-  TMDBGenreResponse,
-  TMDBMovieResponse,
-} from '../interfaces/tmdb-responses.interface';
-import { Genre } from '../../movies/entities/genre.entity';
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Genre } from 'src/modules/movies/entities/genre.entity';
+import { Movie } from 'src/modules/movies/entities/movie.entity';
 import { Repository } from 'typeorm';
+import { TmdbApiService } from './tmdb-api.service';
+import { TmdbTransformerService } from './tmdb-transformer.service';
 
 @Injectable()
 export class TmdbService {
   private readonly logger = new Logger(TmdbService.name);
-  private readonly apiKey: string;
-  private readonly baseUrl: string;
 
   constructor(
-    private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
+    private readonly tmdbApiService: TmdbApiService,
+    private readonly transformer: TmdbTransformerService,
     @InjectRepository(Genre)
     private readonly genreRepository: Repository<Genre>,
-  ) {
-    this.apiKey = this.configService.get<string>('TMDB_API_KEY');
-    this.baseUrl = this.configService.get<string>('TMDB_BASE_URL');
-  }
+    @InjectRepository(Movie)
+    private readonly movieRepository: Repository<Movie>,
+  ) {}
 
-  async fetchAllGenres(): Promise<TMDBGenre[]> {
+  async syncGenres(): Promise<void> {
     try {
-      const url = `${this.baseUrl}/genre/movie/list?api_key=${this.apiKey}`;
-      console.log('url: ', url);
-      const { data } = await firstValueFrom(
-        this.httpService.get<TMDBGenreResponse>(url),
-      );
-      this.logger.log(data);
-      return data.genres;
-    } catch (error) {
-      this.logger.error(`Error fetching genres from TMDB: ${error.message}`);
-      throw error;
-    }
-  }
+      const genres = await this.tmdbApiService.getGenres();
+      if (!genres.length) return;
+      const genreEntities = this.transformer.transformGenres(genres);
 
-  async syncGenres(tmdbGenres: TMDBGenre[]) {
-    // Early exit if no genres to process
-    if (!tmdbGenres || tmdbGenres.length === 0) {
-      return;
-    }
-
-    try {
-      // Transforming TMDB genres to match entity structure
-      const genres = tmdbGenres.map((genre) => ({
-        tmdbId: genre.id,
-        name: genre.name,
-      }));
-
-      // Single database operation to handle both inserts and updates
-      await this.genreRepository.upsert(genres, {
+      await this.genreRepository.upsert(genreEntities, {
         conflictPaths: ['tmdbId'],
         skipUpdateIfNoValuesChanged: true,
       });
-    } catch (error) {
-      this.logger.error('Failed to sync genres', error.stack);
-      throw new Error('Failed to sync genres');
+    } catch (err) {
+      this.logger.error('Error syncing genres', err.stack ?? err.message);
+      throw new InternalServerErrorException('Failed to sync genres');
     }
   }
 
-  async fetchPopularMovies(page = 1): Promise<void> {
+  async syncPopularMovies(): Promise<void> {
     try {
-      const url = `${this.baseUrl}/movie/popular?api_key=${this.apiKey}&page=${page}`;
-      const { data } = await firstValueFrom(
-        this.httpService.get<TMDBMovieResponse>(url),
+      const genreMap = await this.getGenreMap();
+      const allMovies: Partial<Movie>[] = [];
+
+      const firstPage = await this.tmdbApiService.getPopularMovies(1);
+      const totalPages = firstPage.total_pages;
+
+      allMovies.push(
+        ...this.transformer.transformMovies(firstPage.results, genreMap),
       );
 
-      this.logger.log(data);
-    } catch (error) {
-      this.logger.error(
-        `Error fetching popular movies from TMDB: ${error.message}`,
+      const concurrency = 5;
+      const remainingPages = Array.from(
+        { length: totalPages - 1 },
+        (_, i) => i + 2,
       );
+
+      for (let i = 0; i < remainingPages.length; i += concurrency) {
+        const chunk = remainingPages.slice(i, i + concurrency);
+        const results = await Promise.allSettled(
+          chunk.map((page) => this.tmdbApiService.getPopularMovies(page)),
+        );
+
+        for (const [j, result] of results.entries()) {
+          const page = chunk[j];
+          if (result.status === 'fulfilled') {
+            allMovies.push(
+              ...this.transformer.transformMovies(
+                result.value.results,
+                genreMap,
+              ),
+            );
+          } else {
+            this.logger.warn(`Failed to fetch page ${page}: ${result.reason}`);
+          }
+        }
+      }
+
+      if (allMovies.length > 0) {
+        await this.deduplicateAndUpsertMovies(allMovies);
+      }
+    } catch (error) {
+      this.logger.error(`Error fetching popular movies: ${error.message}`);
       throw error;
     }
   }
 
+  private async deduplicateAndUpsertMovies(
+    movies: Partial<Movie>[],
+  ): Promise<void> {
+    const uniqueMoviesMap = new Map<number, Partial<Movie>>();
+    for (const movie of movies) {
+      uniqueMoviesMap.set(movie.tmdbId, movie); // Overwrites duplicates
+    }
+    const uniqueMovies = Array.from(uniqueMoviesMap.values());
+
+    if (uniqueMovies.length === 0) {
+      this.logger.warn('No unique movies to upsert.');
+      return;
+    }
+
+    await this.movieRepository.upsert(uniqueMovies, ['tmdbId']);
+  }
+
+  private async getGenreMap(): Promise<Map<number, Genre>> {
+    const genres = await this.genreRepository.find();
+    return new Map(genres.map((g) => [g.tmdbId, g]));
+  }
+
   // Scheduled task to sync data nightly
-  @Cron('* * * * *') // Run at midnight every day @Cron('0 0 * * *')
-  async syncData() {
-    this.logger.log('Starting TMDB data synchronization...');
+  @Cron('* * * * *') // Midnight daily
+  async syncData(): Promise<void> {
+    this.logger.log('Starting TMDB data sync...');
     try {
-      const tmdbGenres: TMDBGenre[] = await this.fetchAllGenres();
-      await this.syncGenres(tmdbGenres);
-      // await this.fetchPopularMovies();
-      this.logger.log('TMDB data synchronization completed successfully');
-    } catch (error) {
-      this.logger.error(`TMDB data synchronization failed: ${error.message}`);
+      await this.syncGenres();
+      await this.syncPopularMovies();
+      this.logger.log('TMDB data sync completed.');
+    } catch (err) {
+      this.logger.error(`TMDB sync failed: ${err.message}`, err.stack);
     }
   }
 }
