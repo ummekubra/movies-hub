@@ -7,9 +7,10 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Genre } from 'src/modules/movies/entities/genre.entity';
 import { Movie } from 'src/modules/movies/entities/movie.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { TmdbApiService } from './tmdb-api.service';
 import { TmdbTransformerService } from './tmdb-transformer.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TmdbService {
@@ -22,6 +23,7 @@ export class TmdbService {
     private readonly genreRepository: Repository<Genre>,
     @InjectRepository(Movie)
     private readonly movieRepository: Repository<Movie>,
+    private readonly configService: ConfigService,
   ) {}
 
   async syncGenres(): Promise<void> {
@@ -46,7 +48,8 @@ export class TmdbService {
       const allMovies: Partial<Movie>[] = [];
 
       const firstPage = await this.tmdbApiService.getPopularMovies(1);
-      const totalPages = firstPage.total_pages;
+      const numSyncPages = this.configService.get<number>('SYNC_PAGE_COUNT');
+      const totalPages: number = numSyncPages ?? firstPage.total_pages;
 
       allMovies.push(
         ...this.transformer.transformMovies(firstPage.results, genreMap),
@@ -80,7 +83,7 @@ export class TmdbService {
       }
 
       if (allMovies.length > 0) {
-        await this.deduplicateAndUpsertMovies(allMovies);
+        await this.deduplicateAndUpdateMovies(allMovies);
       }
     } catch (error) {
       this.logger.error(`Error fetching popular movies: ${error.message}`);
@@ -88,7 +91,7 @@ export class TmdbService {
     }
   }
 
-  private async deduplicateAndUpsertMovies(
+  private async deduplicateAndUpdateMovies(
     movies: Partial<Movie>[],
   ): Promise<void> {
     const uniqueMoviesMap = new Map<number, Partial<Movie>>();
@@ -102,7 +105,42 @@ export class TmdbService {
       return;
     }
 
-    await this.movieRepository.upsert(uniqueMovies, ['tmdbId']);
+    const existingMoviesMap = await this.getExistingMovies(uniqueMovies);
+
+    // Prepare entities to save
+    const moviesToSave: Movie[] = [];
+
+    for (const movieData of uniqueMovies) {
+      const existing = existingMoviesMap.get(movieData.tmdbId);
+
+      if (existing) {
+        // Update existing movie but preserve the id
+        const updatedMovie = {
+          ...existing,
+          ...movieData,
+        };
+
+        moviesToSave.push(updatedMovie as Movie);
+      } else {
+        // New movie
+        moviesToSave.push(movieData as Movie);
+      }
+    }
+
+    // Save all entities with relationships intact
+    await this.movieRepository.save(moviesToSave);
+
+    this.logger.log(`Successfully processed ${moviesToSave.length} movies`);
+  }
+
+  private async getExistingMovies(uniqueMovies): Promise<Map<number, Movie>> {
+    // Find existing movies with their genres
+    const existingMovies = await this.movieRepository.find({
+      where: { tmdbId: In(uniqueMovies.map((movie) => movie.tmdbId)) },
+      relations: ['genres'],
+    });
+
+    return new Map(existingMovies.map((movie) => [movie.tmdbId, movie]));
   }
 
   private async getGenreMap(): Promise<Map<number, Genre>> {
@@ -111,7 +149,7 @@ export class TmdbService {
   }
 
   // Scheduled task to sync data nightly
-  @Cron('* * * * *') // Midnight daily
+  @Cron('0 0 * * *') // Midnight daily
   async syncData(): Promise<void> {
     this.logger.log('Starting TMDB data sync...');
     try {

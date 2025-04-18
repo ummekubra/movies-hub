@@ -3,9 +3,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
-    .setTitle('Movies API')
+    .setTitle('TMDB Movie API')
     .setDescription('API documentation for the movies')
     .setVersion('1.0')
+    .addTag('movies')
     .addBearerAuth({
       type: 'http',
       scheme: 'bearer',
