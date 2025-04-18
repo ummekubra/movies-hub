@@ -1,27 +1,36 @@
 import { Injectable } from '@nestjs/common';
-import { CreateMovieDto } from './dto/create-movie.dto';
-import { UpdateMovieDto } from './dto/update-movie.dto';
-
+import { MovieFilterDto } from './dto/movies-filter.dto';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { Movie } from './entities/movie.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { MovieQueryBuilder } from './utils/movie-query.builder';
 @Injectable()
 export class MoviesService {
-  
-  create(createMovieDto: CreateMovieDto) {
-    return 'This action adds a new movie';
-  }
+  constructor(
+    @InjectRepository(Movie)
+    private readonly movieRepository: Repository<Movie>,
+    private readonly paginationProvider: PaginationProvider,
+    private readonly movieQueryBuilder: MovieQueryBuilder,
+  ) {}
 
-  findAll() {
-    return `This action returns all movies`;
-  }
+  async findAll(filterDto: MovieFilterDto): Promise<Paginated<Movie>> {
+    // Create query builder with all needed relationships
+    const queryBuilder = this.movieRepository
+      .createQueryBuilder('movie')
+      .leftJoinAndSelect('movie.genres', 'genre');
 
-  findOne(id: number) {
-    return `This action returns a #${id} movie`;
-  }
+    // Apply filters and sorting
+    this.movieQueryBuilder.applyFilters(queryBuilder, filterDto);
+    this.movieQueryBuilder.applySorting(queryBuilder, filterDto);
 
-  update(id: number, updateMovieDto: UpdateMovieDto) {
-    return `This action updates a #${id} movie`;
-  }
+    // Apply pagination
+    const result = await this.paginationProvider.paginate<Movie>(
+      filterDto,
+      queryBuilder,
+    );
 
-  remove(id: number) {
-    return `This action removes a #${id} movie`;
+    return result;
   }
 }

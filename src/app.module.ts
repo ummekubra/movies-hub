@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MoviesModule } from './modules/movies/movies.module';
 import { UsersModule } from './modules/users/users.module';
 import typeOrmConfig from './config/typeorm.config';
+import { PaginationModule } from './common/pagination/pagination.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import typeOrmConfig from './config/typeorm.config';
     TmdbModule,
     MoviesModule,
     UsersModule,
+    PaginationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
