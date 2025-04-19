@@ -1,9 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { MoviesService } from './movies.service';
+import { MoviesService } from '../services/movies.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { Movie } from './entities/movie.entity';
-import { MovieFilterDto } from './dto/movies-filter.dto';
+import { Movie } from '../entities/movie.entity';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { MovieFilterDto } from '../dtos/movies-filter.dto';
 
 @ApiTags('movies')
 @Controller('movies')

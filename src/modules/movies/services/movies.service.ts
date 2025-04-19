@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { MovieFilterDto } from './dto/movies-filter.dto';
-import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
-import { Movie } from './entities/movie.entity';
+import { MovieFilterDto } from '../dtos/movies-filter.dto';
+import { Paginated } from '../../../common/pagination/interfaces/paginated.interface';
+import { Movie } from '../entities/movie.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { MovieQueryBuilder } from './utils/movie-query.builder';
+import { MovieQueryBuilder } from '../utils/movie-query.builder';
 @Injectable()
 export class MoviesService {
   constructor(

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
 import { Movie } from '../entities/movie.entity';
-import { MovieFilterDto } from '../dto/movies-filter.dto';
+import { MovieFilterDto } from '../dtos/movies-filter.dto';
 
 @Injectable()
 export class MovieQueryBuilder {
