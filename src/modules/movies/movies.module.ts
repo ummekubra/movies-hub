@@ -10,14 +10,23 @@ import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { MovieQueryBuilder } from './utils/movie-query.builder';
 import { MovieRatingController } from './controllers/movie-rating.controller';
 import { MovieRatingService } from './services/movie-rating.service';
+import { WatchlistService } from './services/watchlist.service';
+import { WatchlistController } from './controllers/watchlist.controller';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Movie, MovieRating, Watchlist, Genre]),
     PaginationModule,
+    UsersModule,
   ],
-  controllers: [MoviesController, MovieRatingController],
-  providers: [MoviesService, MovieRatingService, MovieQueryBuilder],
+  controllers: [MoviesController, MovieRatingController, WatchlistController],
+  providers: [
+    MoviesService,
+    MovieRatingService,
+    MovieQueryBuilder,
+    WatchlistService,
+  ],
   exports: [TypeOrmModule],
 })
 export class MoviesModule {}
