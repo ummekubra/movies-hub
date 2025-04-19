@@ -8,14 +8,16 @@ import { Watchlist } from './entities/watchlist.entity';
 import { Genre } from './entities/genre.entity';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { MovieQueryBuilder } from './utils/movie-query.builder';
+import { MovieRatingController } from './controllers/movie-rating.controller';
+import { MovieRatingService } from './services/movie-rating.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Movie, MovieRating, Watchlist, Genre]),
     PaginationModule,
   ],
-  controllers: [MoviesController],
-  providers: [MoviesService, MovieQueryBuilder],
+  controllers: [MoviesController, MovieRatingController],
+  providers: [MoviesService, MovieRatingService, MovieQueryBuilder],
   exports: [TypeOrmModule],
 })
 export class MoviesModule {}

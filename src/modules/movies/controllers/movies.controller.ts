@@ -5,7 +5,7 @@ import { Movie } from '../entities/movie.entity';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { MovieFilterDto } from '../dtos/movies-filter.dto';
 
-@ApiTags('movies')
+@ApiTags('Movies')
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
