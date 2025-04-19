@@ -6,7 +6,6 @@ export function setupSwagger(app: INestApplication): void {
     .setTitle('TMDB Movie API')
     .setDescription('API documentation for the movies')
     .setVersion('1.0')
-    .addTag('movies')
     .addBearerAuth({
       type: 'http',
       scheme: 'bearer',
