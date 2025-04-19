@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { setupSwagger } from './config/swagger.config';
 import { ValidationPipe } from '@nestjs/common';
+import { TypeOrmExceptionFilter } from './common/filters/typeorm-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,8 @@ async function bootstrap() {
       transform: true, // Transform payloads into DTO instances
     }),
   );
+
+  app.useGlobalFilters(new TypeOrmExceptionFilter());
 
   setupSwagger(app);
   await app.listen(process.env.SERVER_PORT ?? 8080);
