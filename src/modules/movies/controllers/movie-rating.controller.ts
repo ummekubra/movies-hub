@@ -1,4 +1,3 @@
-// src/movies/controllers/movie-rating.controller.ts
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { MovieRatingService } from '../services/movie-rating.service';
 import {
