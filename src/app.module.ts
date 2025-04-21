@@ -9,7 +9,8 @@ import { UsersModule } from './modules/users/users.module';
 import typeOrmConfig from './config/typeorm.config';
 import { PaginationModule } from './common/pagination/pagination.module';
 import { AuthModule } from './modules/auth/auth.module';
-
+import { CacheModule } from '@nestjs/cache-manager';
+import cacheConfig from './config/cache.config';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,6 +21,7 @@ import { AuthModule } from './modules/auth/auth.module';
       inject: [ConfigService],
       useFactory: typeOrmConfig,
     }),
+    CacheModule.registerAsync(cacheConfig()),
     ScheduleModule.forRoot(), // initiates cron
     TmdbModule,
     MoviesModule,
