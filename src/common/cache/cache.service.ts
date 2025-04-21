@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { keyvInstance } from 'src/config/cache.config';
+import { keyvInstance } from '../../config/cache.config';
 
 @Injectable()
 export class CacheService {

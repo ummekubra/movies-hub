@@ -10,8 +10,8 @@ import { Movie } from '../entities/movie.entity';
 import { AddToWatchlistDto } from '../dtos/add-to-watchist.dto';
 import { User } from '../../users/entities/user.entity';
 import { WatchlistResponseDto } from '../dtos/watchlist-response.dto';
-import { CacheKeys } from 'src/common/constants/cache-keys.constants';
-import { CacheService } from 'src/common/cache/cache.service';
+import { CacheKeys } from '../../../common/constants/cache-keys.constants';
+import { CacheService } from '../../../common/cache/cache.service';
 @Injectable()
 export class WatchlistService {
   constructor(

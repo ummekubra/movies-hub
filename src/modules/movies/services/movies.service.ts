@@ -9,14 +9,14 @@ import { Paginated } from '../../../common/pagination/interfaces/paginated.inter
 import { Movie } from '../entities/movie.entity';
 import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { PaginationProvider } from '../../../common/pagination/providers/pagination.provider';
 import { MovieQueryBuilder } from '../utils/movie-query.builder';
 import { CreateMovieDto } from '../dtos/create-movie.dto';
 import { Genre } from '../entities/genre.entity';
 import { UpdateMovieDto } from '../dtos/update-movie.dto';
-import { CacheService } from 'src/common/cache/cache.service';
+import { CacheService } from '../../../common/cache/cache.service';
 import { ConfigService } from '@nestjs/config';
-import { CacheKeys } from 'src/common/constants/cache-keys.constants';
+import { CacheKeys } from '../../../common/constants/cache-keys.constants';
 @Injectable()
 export class MoviesService {
   constructor(

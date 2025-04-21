@@ -6,14 +6,14 @@ import { Movie } from './entities/movie.entity';
 import { MovieRating } from './entities/movie-rating.entity';
 import { Watchlist } from './entities/watchlist.entity';
 import { Genre } from './entities/genre.entity';
-import { PaginationModule } from 'src/common/pagination/pagination.module';
+import { PaginationModule } from '../../common/pagination/pagination.module';
 import { MovieQueryBuilder } from './utils/movie-query.builder';
 import { MovieRatingController } from './controllers/movie-rating.controller';
 import { MovieRatingService } from './services/movie-rating.service';
 import { WatchlistService } from './services/watchlist.service';
 import { WatchlistController } from './controllers/watchlist.controller';
 import { UsersModule } from '../users/users.module';
-import { CacheService } from 'src/common/cache/cache.service';
+import { CacheService } from '../../common/cache/cache.service';
 
 @Module({
   imports: [

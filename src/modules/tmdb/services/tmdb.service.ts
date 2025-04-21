@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Genre } from 'src/modules/movies/entities/genre.entity';
-import { Movie } from 'src/modules/movies/entities/movie.entity';
+import { Genre } from '../../../modules/movies/entities/genre.entity';
+import { Movie } from '../../../modules/movies/entities/movie.entity';
 import { In, Repository } from 'typeorm';
 import { TmdbApiService } from './tmdb-api.service';
 import { TmdbTransformerService } from './tmdb-transformer.service';
