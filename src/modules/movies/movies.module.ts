@@ -13,6 +13,7 @@ import { MovieRatingService } from './services/movie-rating.service';
 import { WatchlistService } from './services/watchlist.service';
 import { WatchlistController } from './controllers/watchlist.controller';
 import { UsersModule } from '../users/users.module';
+import { CacheService } from 'src/common/cache/cache.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { UsersModule } from '../users/users.module';
     MovieRatingService,
     MovieQueryBuilder,
     WatchlistService,
+    CacheService,
   ],
   exports: [TypeOrmModule],
 })

@@ -14,8 +14,13 @@ import { MovieQueryBuilder } from '../utils/movie-query.builder';
 import { CreateMovieDto } from '../dtos/create-movie.dto';
 import { Genre } from '../entities/genre.entity';
 import { UpdateMovieDto } from '../dtos/update-movie.dto';
+import { CacheService } from 'src/common/cache/cache.service';
+import { ConfigService } from '@nestjs/config';
+import { CacheKeys } from 'src/common/constants/cache-keys.constants';
 @Injectable()
 export class MoviesService {
+  private readonly cacheTtl: number;
+
   constructor(
     @InjectRepository(Movie)
     private readonly movieRepository: Repository<Movie>,
@@ -23,9 +28,20 @@ export class MoviesService {
     private readonly genreRepository: Repository<Genre>,
     private readonly paginationProvider: PaginationProvider,
     private readonly movieQueryBuilder: MovieQueryBuilder,
-  ) {}
+    private readonly configService: ConfigService,
+    private readonly cacheService: CacheService,
+  ) {
+    this.cacheTtl = this.configService.get<number>('REDIS_TTL') || 3600000; // 1 hour default
+  }
 
   async findAll(filterDto: MovieFilterDto): Promise<Paginated<Movie>> {
+    const cached = await this.cacheService.getList<Paginated<Movie>>(
+      filterDto,
+      CacheKeys.MOVIE_PREFIX,
+    );
+
+    if (cached) return cached;
+
     // Create query builder with all needed relationships
     const queryBuilder = this.movieRepository
       .createQueryBuilder('movie')
@@ -41,10 +57,22 @@ export class MoviesService {
       queryBuilder,
     );
 
+    await this.cacheService.setList(
+      CacheKeys.MOVIE_MODULE,
+      filterDto,
+      result,
+      CacheKeys.MOVIE_PREFIX,
+    );
+
     return result;
   }
 
   async findOne(id: number): Promise<Movie> {
+    const cacheKey = CacheKeys.MOVIE_DETAILS(id);
+
+    const cached = await this.cacheService.get<Movie>(cacheKey);
+    if (cached) return cached;
+
     const movie = await this.movieRepository.findOne({
       where: { id },
       relations: ['genres'],
@@ -53,6 +81,8 @@ export class MoviesService {
     if (!movie) {
       throw new NotFoundException(`Movie with ID ${id} not found`);
     }
+
+    await this.cacheService.set(cacheKey, movie);
 
     return movie;
   }
@@ -65,7 +95,9 @@ export class MoviesService {
       movie.genres = await this.loadGenresByIds(genreIds);
     }
 
-    return this.movieRepository.save(movie);
+    const saved = this.movieRepository.save(movie);
+    await this.cacheService.invalidateListCache(CacheKeys.MOVIE_MODULE);
+    return saved;
   }
 
   async update(id: number, updateMovieDto: UpdateMovieDto): Promise<Movie> {
@@ -81,6 +113,9 @@ export class MoviesService {
     if (genreIds) {
       movie.genres = await this.loadGenresByIds(genreIds);
     }
+
+    await this.cacheService.delete(CacheKeys.MOVIE_DETAILS(id));
+    await this.cacheService.invalidateListCache(CacheKeys.MOVIE_MODULE);
 
     return this.movieRepository.save(movie);
   }
@@ -109,6 +144,9 @@ export class MoviesService {
 
     try {
       await this.movieRepository.remove(movie);
+
+      await this.cacheService.delete(CacheKeys.MOVIE_DETAILS(id));
+      await this.cacheService.invalidateListCache(CacheKeys.MOVIE_MODULE);
     } catch (error) {
       throw new InternalServerErrorException(
         `Failed to delete the movie: ${error.message}`,
