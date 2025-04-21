@@ -26,6 +26,11 @@ export class TmdbService {
     private readonly configService: ConfigService,
   ) {}
 
+  onApplicationBootstrap() {
+    this.logger.log('Running cron once to sync tmdb');
+    this.syncData();
+  }
+
   async syncGenres(): Promise<void> {
     try {
       const genres = await this.tmdbApiService.getGenres();
