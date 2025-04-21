@@ -11,6 +11,13 @@ export function setupSwagger(app: INestApplication): void {
       scheme: 'bearer',
       bearerFormat: 'JWT',
     })
+    // Order here determines the tag order in Swagger UI
+    .addTag('Health', "Check Application's health")
+    .addTag('Auth', 'Authentication and login endpoints')
+    .addTag('Users', 'User management')
+    .addTag('Movies', 'Movie sync and retrieval')
+    .addTag('Movie Ratings')
+    .addTag('Watchlist')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

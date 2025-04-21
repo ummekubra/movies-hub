@@ -1,4 +1,3 @@
-
 # Movies Hub API
 
 A NestJS application that consumes The Movie Database (TMDB) APIs to store and sync movie data in a PostgreSQL database with a Redis caching layer.
@@ -165,12 +164,6 @@ The project includes comprehensive unit and integration tests:
 ```bash
 # Run all tests
 npm test
-
-# Run tests with coverage
-npm run test:cov
-
-# Run e2e tests
-npm run test:e2e
 ```
 
 ## Data Syncing
