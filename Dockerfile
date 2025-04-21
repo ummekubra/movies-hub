@@ -24,7 +24,7 @@ FROM node:20-alpine3.19
 WORKDIR /app
 
 # Optional: Patch base image packages
-RUN apk update && apk upgrade --no-cache
+# RUN apk update && apk upgrade --no-cache
 
 # Only copy necessary files
 COPY --from=builder /app/package*.json ./
