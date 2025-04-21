@@ -19,8 +19,6 @@ import { ConfigService } from '@nestjs/config';
 import { CacheKeys } from 'src/common/constants/cache-keys.constants';
 @Injectable()
 export class MoviesService {
-  private readonly cacheTtl: number;
-
   constructor(
     @InjectRepository(Movie)
     private readonly movieRepository: Repository<Movie>,
@@ -30,9 +28,7 @@ export class MoviesService {
     private readonly movieQueryBuilder: MovieQueryBuilder,
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
-  ) {
-    this.cacheTtl = this.configService.get<number>('REDIS_TTL') || 3600000; // 1 hour default
-  }
+  ) {}
 
   async findAll(filterDto: MovieFilterDto): Promise<Paginated<Movie>> {
     const cached = await this.cacheService.getList<Paginated<Movie>>(
