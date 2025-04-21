@@ -10,7 +10,8 @@ import { Movie } from '../entities/movie.entity';
 import { AddToWatchlistDto } from '../dtos/add-to-watchist.dto';
 import { User } from '../../users/entities/user.entity';
 import { WatchlistResponseDto } from '../dtos/watchlist-response.dto';
-
+import { CacheKeys } from 'src/common/constants/cache-keys.constants';
+import { CacheService } from 'src/common/cache/cache.service';
 @Injectable()
 export class WatchlistService {
   constructor(
@@ -22,6 +23,8 @@ export class WatchlistService {
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly cacheService: CacheService,
   ) {}
 
   async addToWatchlist(
@@ -36,12 +39,6 @@ export class WatchlistService {
       throw new NotFoundException(`Movie with ID ${dto.movieId} not found`);
     }
 
-    // Check if user exists
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
     // Check if movie is already in user's watchlist
     const existingEntry = await this.watchlistRepository.findOne({
       where: { user: { id: userId }, movie: { id: dto.movieId } },
@@ -53,9 +50,12 @@ export class WatchlistService {
     }
 
     const savedMovie = await this.watchlistRepository.save({
-      user,
+      user: { id: userId } as User,
       movie,
     });
+
+    await this.cacheService.delete(CacheKeys.USER_WATCHLIST(userId));
+
     return this.toResponseDto({ ...savedMovie, movie });
   }
 
@@ -73,13 +73,20 @@ export class WatchlistService {
   }
 
   async getWatchlistByUser(userId: number): Promise<WatchlistResponseDto[]> {
+    const cacheKey = CacheKeys.USER_WATCHLIST(userId);
+    const cached =
+      await this.cacheService.get<WatchlistResponseDto[]>(cacheKey);
+    if (cached) return cached;
+
     const watchlistItems = await this.watchlistRepository.find({
       where: { user: { id: userId } },
       relations: ['movie'],
       order: { addedAt: 'DESC' },
     });
 
-    return watchlistItems.map(this.toResponseDto);
+    const watchlistResponse = watchlistItems.map(this.toResponseDto);
+    await this.cacheService.set(cacheKey, watchlistResponse);
+    return watchlistResponse;
   }
 
   async removeFromWatchlist(userId: number, movieId: number): Promise<void> {
@@ -89,5 +96,6 @@ export class WatchlistService {
     if (!entry) throw new NotFoundException('Watchlist entry not found');
 
     await this.watchlistRepository.remove(entry);
+    await this.cacheService.delete(CacheKeys.USER_WATCHLIST(userId));
   }
 }
