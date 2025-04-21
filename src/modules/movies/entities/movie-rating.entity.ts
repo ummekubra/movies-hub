@@ -18,7 +18,9 @@ export class MovieRating {
   @Column({ type: 'decimal', precision: 2, scale: 1 })
   rating: number;
 
-  @ManyToOne(() => Movie, (movie) => movie.ratings)
+  @ManyToOne(() => Movie, (movie) => movie.ratings, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   movie: Movie;
 

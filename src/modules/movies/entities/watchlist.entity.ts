@@ -13,7 +13,9 @@ export class Watchlist {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Movie, (movie) => movie.watchlists)
+  @ManyToOne(() => Movie, (movie) => movie.watchlists, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   movie: Movie;
 

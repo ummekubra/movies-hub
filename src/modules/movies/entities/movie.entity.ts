@@ -54,10 +54,16 @@ export class Movie {
   @JoinTable()
   genres: Genre[];
 
-  @OneToMany(() => MovieRating, (rating) => rating.movie)
+  @OneToMany(() => MovieRating, (rating) => rating.movie, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   ratings: MovieRating[];
 
-  @OneToMany(() => Watchlist, (watchlist) => watchlist.movie)
+  @OneToMany(() => Watchlist, (watchlist) => watchlist.movie, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   watchlists: Watchlist[];
 
   @CreateDateColumn()
