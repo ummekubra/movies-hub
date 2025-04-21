@@ -22,6 +22,6 @@ async function bootstrap() {
   app.useGlobalFilters(new TypeOrmExceptionFilter());
 
   setupSwagger(app);
-  await app.listen(process.env.SERVER_PORT ?? 8080);
+  await app.listen(process.env.SERVER_PORT ?? 8080, '0.0.0.0');
 }
 bootstrap();

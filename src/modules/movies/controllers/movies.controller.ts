@@ -20,9 +20,9 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { Movie } from '../entities/movie.entity';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { Paginated } from '../../../common/pagination/interfaces/paginated.interface';
 import { MovieFilterDto } from '../dtos/movies-filter.dto';
-import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../modules/auth/guards/jwt-auth.guard';
 import { CreateMovieDto } from '../dtos/create-movie.dto';
 import { UpdateMovieDto } from '../dtos/update-movie.dto';
 

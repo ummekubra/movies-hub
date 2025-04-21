@@ -24,6 +24,10 @@ export class TmdbApiService {
   ) {
     this.apiKey = this.configService.get<string>('TMDB_API_KEY');
     this.baseUrl = this.configService.get<string>('TMDB_BASE_URL');
+
+    if (!this.apiKey) {
+      throw new InternalServerErrorException('TMDB_API_KEY must be provided');
+    }
   }
 
   private buildUrl(

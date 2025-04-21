@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Genre } from 'src/modules/movies/entities/genre.entity';
-import { Movie } from 'src/modules/movies/entities/movie.entity';
+import { Genre } from '../../../modules/movies/entities/genre.entity';
+import { Movie } from '../../../modules/movies/entities/movie.entity';
 import { TMDBGenre, TMDBMovie } from '../interfaces/tmdb-responses.interface';
 
 @Injectable()
