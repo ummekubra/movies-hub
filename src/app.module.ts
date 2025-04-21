@@ -10,6 +10,7 @@ import typeOrmConfig from './config/typeorm.config';
 import { PaginationModule } from './common/pagination/pagination.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { HealthModule } from './health/health.module';
 import cacheConfig from './config/cache.config';
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import cacheConfig from './config/cache.config';
     UsersModule,
     PaginationModule,
     AuthModule,
+    HealthModule,
   ],
   providers: [AppService],
 })
